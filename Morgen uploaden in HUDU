@@ -1,0 +1,18 @@
+# 18. Calendar rechten bekijken
+Get-MailboxFolderPermission user@domein.nl:\Calendar
+
+# Full Access zonder AutoMapping
+Add-MailboxPermission -Identity mailbox@domein.nl -User gebruiker@domein.nl -AccessRights FullAccess -InheritanceType All -AutoMapping:$false
+
+# Send As
+Add-RecipientPermission -Identity mailbox@domein.nl -Trustee gebruiker@domein.nl -AccessRights SendAs -Confirm:$false
+
+#azuread status op user/device niveau achterhalen
+dsregcmd /status
+
+
+#ip/mac-address/ipv6 opvragen en alle netwerk adapters
+ipconfig en ipconfig /all
+
+#Mailbox permissies opvragen
+Get-MailboxPermission mailbox@domein.nl
