@@ -1,13 +1,13 @@
-//Mailox permissie in het engels toevoegen:
+//Agenda permissie in het engels toevoegen:
 Add-MailboxFolderPermission -Identity "user@domein.nl:\Calendar" -User "beheerder@domein.nl" -AccessRights Editor/reviewer
 
-//Mailox permissie in het Nederlands toevoegen:
+//Agenda permissie in het Nederlands toevoegen:
 Add-MailboxFolderPermission -Identity "user@domein.nl:\Agenda" -User "beheerder@domein.nl" -AccessRights Editor/reviewer
 
-//Mailox permissie in het engels verwijderen:
+//Agenda permissie in het engels verwijderen:
 Remove-MailboxFolderPermission -Identity "user@domein.nl:\Calendar" -User "beheerder@domein.nl"
 
-//Mailox permissie in het Nederlands verwijderen:
+//Agenda permissie in het Nederlands verwijderen:
 Remove-MailboxFolderPermission -Identity "user@domein.nl:\Agenda" -User "beheerder@domein.nl"
 
 
