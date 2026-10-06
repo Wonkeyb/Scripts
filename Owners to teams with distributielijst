@@ -1,0 +1,86 @@
+$users = "user1@tenant.com","user2@tenant.com","user3@tenant.com","user4@tenant.com","user5@tenant.com"
+
+$userIds = $users | ForEach-Object {
+    (Get-MgUser -UserId $_ -ErrorAction Stop).Id
+}
+
+$clause = '(user.userPrincipalName -in ["' + ($users -join '","') + '"])'
+
+Write-Host "Groepen ophalen..." -ForegroundColor Cyan
+
+$siteMap = @{}
+
+Get-MgGroup -All -Filter "groupTypes/any(c:c eq 'Unified')" -Property Id | ForEach-Object {
+    try {
+        $siteUrl = (Invoke-MgGraphRequest GET "v1.0/groups/$($_.Id)/sites/root?`$select=webUrl").webUrl
+
+        if ($siteUrl) {
+            $siteMap[$siteUrl.TrimEnd('/')] = $_.Id
+        }
+    }
+    catch {}
+}
+
+if ($siteMap.Count -eq 0) {
+    throw "Geen groepen gevonden - controleer Connect-MgGraph"
+}
+
+"Site1",
+"Site2",
+"Site3",
+"Site4",
+"Site5",
+"Site6",
+"Site7",
+"Site8",
+"Site9",
+"Site10" | ForEach-Object {
+
+    $siteUrl = "https://tenant.sharepoint.com/sites/$_"
+    $groupId = $siteMap[$siteUrl]
+
+    if (!$groupId) {
+        Write-Host "GEEN TEAM $siteUrl" -ForegroundColor Yellow
+        return
+    }
+
+    try {
+        $group = Get-MgGroup -GroupId $groupId -Property MembershipRule,GroupTypes
+
+        if ($group.GroupTypes -contains 'DynamicMembership') {
+
+            if (-not $group.MembershipRule.Contains($clause)) {
+                Update-MgGroup -GroupId $groupId -MembershipRule "($($group.MembershipRule)) -or $clause" -ErrorAction Stop
+            }
+
+            $type = "DYNAMISCH"
+        }
+        else {
+
+            $members = @((Get-MgGroupMember -GroupId $groupId -All).Id)
+
+            $userIds |
+                Where-Object { $members -notcontains $_ } |
+                ForEach-Object {
+                    New-MgGroupMember -GroupId $groupId -DirectoryObjectId $_ -ErrorAction Stop
+                }
+
+            $type = "STATISCH"
+        }
+
+        $owners = @((Get-MgGroupOwner -GroupId $groupId -All).Id)
+
+        $userIds |
+            Where-Object { $owners -notcontains $_ } |
+            ForEach-Object {
+                New-MgGroupOwnerByRef -GroupId $groupId -BodyParameter @{
+                    "@odata.id" = "https://graph.microsoft.com/v1.0/directoryObjects/$_"
+                } -ErrorAction Stop
+            }
+
+        Write-Host "OK $type $siteUrl" -ForegroundColor Green
+    }
+    catch {
+        Write-Host "FOUT $siteUrl : $($_.Exception.Message)" -ForegroundColor Red
+    }
+}
