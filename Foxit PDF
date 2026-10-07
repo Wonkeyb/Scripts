@@ -1,0 +1,8 @@
+//Kijken welke FoxitPDF er op device staat:
+New-PSDrive HKU Registry HKEY_USERS -EA 0|Out-Null;$r=gp 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*','HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*','HKU:\*\Software\Microsoft\Windows\CurrentVersion\Uninstall\*' -EA 0|?{$_.DisplayName -like 'Foxit*Reader*'}|%{'{0} | {1} | {2}' -f $_.DisplayName,$_.DisplayVersion,$(if($_.PSPath -match 'HKEY_USERS\\([^\\]+)'){"User $($matches[1])"}else{'Machine'})};if($r){$r}else{'Foxit PDF Reader niet gevonden'}
+
+
+
+//Updaten van Foxit en oude versies verwijderen
+$f="$env:TEMP\FoxitSetup.exe";[Net.ServicePointManager]::SecurityProtocol='Tls12';$ProgressPreference='SilentlyContinue';iwr 'https://www.foxit.com/downloads/latest.html?product=Foxit-Reader&platform=Windows&version=&package_type=exe&language=English' -OutFile $f -UseBasicParsing;$s=Get-AuthenticodeSignature $f;if($s.Status -ne 'Valid' -or $s.SignerCertificate.Subject -notmatch 'Foxit'){'Handtekening ongeldig'}else{Get-Process FoxitPDFReader -EA 0|Stop-Process -Force;$p=Start-Process $f '/quiet /norestart /noshortcut' -Wait -PassThru;"Exitcode: $($p.ExitCode)";Remove-Item $f -Force -EA 0}
+
